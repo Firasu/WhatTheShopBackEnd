@@ -27,10 +27,13 @@ class Item(models.Model):
         return self.name
 
 class Order(models.Model):
-    items = models.ManyToManyField(Item, through="OrderItem")
-#
+    item = models.ManyToManyField(Item, through="OrderItem")
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
-#
+
+    def __str__(self):
+        return "%s" % self.quantity

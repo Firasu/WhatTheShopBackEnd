@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import Expert, Item, Order
+from .models import Expert, Item, Order, OrderItem
 from rest_framework_jwt.settings import api_settings
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -33,7 +33,6 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         model = Order
         fields = '__all__'
 
-
 class ExpertListSerializer(serializers.ModelSerializer):
     items = serializers.SerializerMethodField()
 
@@ -42,5 +41,39 @@ class ExpertListSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_items(self, obj):
-        items = Item.objects.filter(expert=obj)
-        return ItemListSerializer(items, many=True).data
+        request = self.context.get('request')
+        # items = Item.objects.filter(expert=obj)
+        items = obj.item_set.all()
+        return ItemListSerializer(items, many=True, context={"request": request}).data
+
+
+class ExpertDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Expert
+        fields = '__all__'
+
+
+class ItemListSerializer(serializers.ModelSerializer):
+    expert = ExpertDetailSerializer()
+    class Meta:
+        model = Item
+        fields = '__all__'
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    item = ItemListSerializer()
+    class Meta:
+        model = OrderItem
+        exclude= ('order',)
+
+class OrderListSerializer(serializers.ModelSerializer):
+    order_items = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = ['order_items']
+
+    def get_order_items(self, obj):
+        request = self.context.get('request')
+        order_items = obj.orderitem_set.all()
+        return OrderItemSerializer(order_items, many=True, context=request.data).data
